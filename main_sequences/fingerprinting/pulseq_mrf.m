@@ -4,7 +4,7 @@ seq_name = 'mrf_';
 
 % main flags
 flag_backup = 0; % 0: off,  1: only backup,  2: backup and send .seq
-flag_report = 0; % 0: off,  1: only timings, 2: full report (slow)
+flag_report = 1; % 0: off,  1: only timings, 2: full report (slow)
 flag_pns    = 0; % 0: off,  1: simulate PNS stimulation
 
 % optional: select scanner
@@ -24,11 +24,13 @@ FOV.dz     = 5   *1e-3;  % [m] slice thickness
 FOV_init();
 
 %% params: MRF flipangles and repetition times
-MRF.pattern         = 'yun'; % select pattern: e.g. 'yun' or 'cao'
-[MRF.FAs, MRF.TRs]  = MRF_get_FAs_TRs(MRF.pattern, 1);
-MRF.FAs(MRF.FAs==0) = 1e-6;
-seq_name            = [seq_name MRF.pattern];
-MRF.NR              = numel(MRF.FAs);
+
+
+%MRF.pattern         = 'yun'; % select pattern: e.g. 'yun' or 'cao'
+%[MRF.FAs, MRF.TRs]  = MRF_get_FAs_TRs(MRF.pattern, 1);
+%MRF.FAs(MRF.FAs==0) = 1e-6;
+%seq_name            = [seq_name MRF.pattern];
+%MRF.NR              = numel(MRF.FAs);
 
 % or define a custom pattern
 % MRF.pattern = 'sin_70';
@@ -36,6 +38,13 @@ MRF.NR              = numel(MRF.FAs);
 % MRF.NR      = numel(MRF.FAs);
 % MRF.TRs     = 12 *1e-3 *ones(MRF.NR,1);
 % seq_name    = [seq_name MRF.pattern];
+
+MRF.pattern = 'DEOptimMultiTI';
+MRF.FAs     = deg2rad(load('/Users/ela/Documents/PhD/code/SequenceParams/flipAnglesDEOptimMultiTI.txt'));
+MRF.NR      = numel(MRF.FAs);
+MRF.TRs     = load('/Users/ela/Documents/PhD/code/SequenceParams/TRDEOptimMultiTI.txt');
+seq_name    = [seq_name MRF.pattern];
+
 
 %% params: Spiral Readouts
 
@@ -55,9 +64,9 @@ SPI.exc_fa_mode   = 'import';    % 'equal',  'ramped',  'import'
 SPI.reph_duration = 1.0 *1e-3;   % [s] slice rephaser duration
 
 % params: gradient spoiling & rf spoiling
-SPI.spoil_nTwist   = 4 * FOV.Nz; % [ ] number of 2pi twist in slice
+SPI.spoil_nTwist   = 4 * FOV.Nz; % [ ] number of 2pi twist in slice Maybe 8*?
 SPI.spoil_rf_mode  = 'lin';      % 'lin' or 'quad'
-SPI.spoil_rf_inc   = 0 *pi/180;  % [rad] rf phase increment
+SPI.spoil_rf_inc   = (123/360)*2*pi; %0 *pi/180;  % [rad] rf phase increment
 SPI.spoil_duration = 1.0 *1e-3;  % [s] slice spoiler duration
 
 % k-space geometry params
@@ -100,14 +109,23 @@ SPI_add_prescans();
 %% create sequence
 
 % inversion
-seq.addTRID('inversion');
-INV_add();
+%seq.addTRID('inversion');
+%INV_add();x
 
-% spiral imaging
+inv_mask        = abs(MRF.FAs - pi) < 1e-6;   % true where FA = π
+SPI.mrf_import.FAs = MRF.FAs(~inv_mask);
+SPI.mrf_import.TRs = MRF.TRs(~inv_mask);
+SPI.NR             = sum(~inv_mask);
+
+[SPI, ktraj_ref] = SPI_init(SPI, FOV, system, 1);
+MRF.TRs = SPI.TR;  % SPI.TR now only has entries for non-inversion TRs
+
+
+% spiral imaging: look at SPI_init.m and change the rf object so i can add
+% IR pulses in there
 for loop_NR = 1:SPI.NR
     SPI_add();
 end
-
 %% plot sequence diagram
 seq.plot()
 
