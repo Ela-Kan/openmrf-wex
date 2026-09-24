@@ -102,82 +102,144 @@ if strcmp(PULSEQ.TRAJ.method, 'robison')
     rawdata_y3 = squeeze(mean(reshape(rawdata_y3, NCoils, Nav, [], NRead), 2));
     rawdata_y4 = squeeze(mean(reshape(rawdata_y4, NCoils, Nav, [], NRead), 2));
 
-    % PCA coil compression: x slice
-    rawdata_x1 = rawdata_x1(:,:);
-    rawdata_x2 = rawdata_x2(:,:);
-    rawdata_x3 = rawdata_x3(:,:);
-    rawdata_x4 = rawdata_x4(:,:);
-    [~, ~, pc] = svd([rawdata_x1, rawdata_x2, rawdata_x3, rawdata_x3].', 'econ');
-    rawdata_x1 = pc.' * rawdata_x1(:,:);
-    rawdata_x2 = pc.' * rawdata_x2(:,:);
-    rawdata_x3 = pc.' * rawdata_x3(:,:);
-    rawdata_x4 = pc.' * rawdata_x4(:,:);
-    rawdata_x1 = reshape(rawdata_x1, [NCoils NR NRead] );
-    rawdata_x2 = reshape(rawdata_x2, [NCoils NR NRead] );
-    rawdata_x3 = reshape(rawdata_x3, [NCoils NR NRead] );
-    rawdata_x4 = reshape(rawdata_x4, [NCoils NR NRead] );
-    rawdata_x1 = squeeze(rawdata_x1(1,:,:));
-    rawdata_x2 = squeeze(rawdata_x2(1,:,:));
-    rawdata_x3 = squeeze(rawdata_x3(1,:,:));
-    rawdata_x4 = squeeze(rawdata_x4(1,:,:));
-    clear pc;
+    
+    if NCoils > 1
+        % PCA coil compression: x slice
+        rawdata_x1 = rawdata_x1(:,:);
+        rawdata_x2 = rawdata_x2(:,:);
+        rawdata_x3 = rawdata_x3(:,:);
+        rawdata_x4 = rawdata_x4(:,:);
+        [~, ~, pc] = svd([rawdata_x1, rawdata_x2, rawdata_x3, rawdata_x4].', 'econ');
+        rawdata_x1 = pc.' * rawdata_x1(:,:);
+        rawdata_x2 = pc.' * rawdata_x2(:,:);
+        rawdata_x3 = pc.' * rawdata_x3(:,:);
+        rawdata_x4 = pc.' * rawdata_x4(:,:);
+        rawdata_x1 = reshape(rawdata_x1, [NCoils NR NRead] );
+        rawdata_x2 = reshape(rawdata_x2, [NCoils NR NRead] );
+        rawdata_x3 = reshape(rawdata_x3, [NCoils NR NRead] );
+        rawdata_x4 = reshape(rawdata_x4, [NCoils NR NRead] );
+        rawdata_x1 = squeeze(rawdata_x1(1,:,:));
+        rawdata_x2 = squeeze(rawdata_x2(1,:,:));
+        rawdata_x3 = squeeze(rawdata_x3(1,:,:));
+        rawdata_x4 = squeeze(rawdata_x4(1,:,:));
+        clear pc;
+    
+        % PCA coil compression: y slice
+        rawdata_y1 = rawdata_y1(:,:);
+        rawdata_y2 = rawdata_y2(:,:);
+        rawdata_y3 = rawdata_y3(:,:);
+        rawdata_y4 = rawdata_y4(:,:);
+        [~, ~, pc] = svd([rawdata_y1, rawdata_y2, rawdata_y3, rawdata_y4].', 'econ');
+        rawdata_y1 = pc.' * rawdata_y1(:,:);
+        rawdata_y2 = pc.' * rawdata_y2(:,:);
+        rawdata_y3 = pc.' * rawdata_y3(:,:);
+        rawdata_y4 = pc.' * rawdata_y4(:,:);
+        rawdata_y1 = reshape(rawdata_y1, [NCoils NR NRead] );
+        rawdata_y2 = reshape(rawdata_y2, [NCoils NR NRead] );
+        rawdata_y3 = reshape(rawdata_y3, [NCoils NR NRead] );
+        rawdata_y4 = reshape(rawdata_y4, [NCoils NR NRead] );
+        rawdata_y1 = squeeze(rawdata_y1(1,:,:));
+        rawdata_y2 = squeeze(rawdata_y2(1,:,:));
+        rawdata_y3 = squeeze(rawdata_y3(1,:,:));
+        rawdata_y4 = squeeze(rawdata_y4(1,:,:));
+        clear pc;
+    end
 
-    % PCA coil compression: y slice
-    rawdata_y1 = rawdata_y1(:,:);
-    rawdata_y2 = rawdata_y2(:,:);
-    rawdata_y3 = rawdata_y3(:,:);
-    rawdata_y4 = rawdata_y4(:,:);
-    [~, ~, pc] = svd([rawdata_y1, rawdata_y2, rawdata_y3, rawdata_y3].', 'econ');
-    rawdata_y1 = pc.' * rawdata_y1(:,:);
-    rawdata_y2 = pc.' * rawdata_y2(:,:);
-    rawdata_y3 = pc.' * rawdata_y3(:,:);
-    rawdata_y4 = pc.' * rawdata_y4(:,:);
-    rawdata_y1 = reshape(rawdata_y1, [NCoils NR NRead] );
-    rawdata_y2 = reshape(rawdata_y2, [NCoils NR NRead] );
-    rawdata_y3 = reshape(rawdata_y3, [NCoils NR NRead] );
-    rawdata_y4 = reshape(rawdata_y4, [NCoils NR NRead] );
-    rawdata_y1 = squeeze(rawdata_y1(1,:,:));
-    rawdata_y2 = squeeze(rawdata_y2(1,:,:));
-    rawdata_y3 = squeeze(rawdata_y3(1,:,:));
-    rawdata_y4 = squeeze(rawdata_y4(1,:,:));
-    clear pc;
-
-    % correct phases accoring to doi: 10.1002/mrm.27583
-    rawdata_xA = rawdata_x1 ./ rawdata_x2;
-    rawdata_xB = rawdata_x4 ./ rawdata_x3;
-    rawdata_yA = rawdata_y1 ./ rawdata_y2;
-    rawdata_yB = rawdata_y4 ./ rawdata_y3;
-    clear rawdata_x1 rawdata_x2 rawdata_x3 rawdata_x4 rawdata_y1 rawdata_y2 rawdata_y3 rawdata_y4
-
-    % unwrap signal phases
+    % get phases using opposite slice positions
+    rawdata_xA = rawdata_x1 .* conj(rawdata_x2);
+    rawdata_xB = rawdata_x4 .* conj(rawdata_x3);
+    rawdata_yA = rawdata_y1 .* conj(rawdata_y2);
+    rawdata_yB = rawdata_y4 .* conj(rawdata_y3);    
     if NR==1
         rawdata_xA = rawdata_xA.';
         rawdata_xB = rawdata_xB.';
         rawdata_yA = rawdata_yA.';
         rawdata_yB = rawdata_yB.';
     end
-    phase_xA = zeros(size(rawdata_xA));
-    phase_xB = zeros(size(rawdata_xB));
-    phase_yA = zeros(size(rawdata_yA));
-    phase_yB = zeros(size(rawdata_yB));
-    for j=1:NR
-        phase_xA(j,:) = unwrap(angle(squeeze(rawdata_xA(j,:))));
-        phase_xB(j,:) = unwrap(angle(squeeze(rawdata_xB(j,:))));
-        phase_yA(j,:) = unwrap(angle(squeeze(rawdata_yA(j,:))));
-        phase_yB(j,:) = unwrap(angle(squeeze(rawdata_yB(j,:))));
+    clear rawdata_x1 rawdata_x2 rawdata_x3 rawdata_x4 rawdata_y1 rawdata_y2 rawdata_y3 rawdata_y4;
+    
+    % load nominal trajectroy for phase prior
+    ktraj_calc   = SPI_load_ktraj(PULSEQ.PULSEQ_SPI);
+    ktraj_calc_x = squeeze(ktraj_calc(1,:,:));
+    ktraj_calc_y = squeeze(ktraj_calc(2,:,:));
+    if NR==1
+        ktraj_calc_x = ktraj_calc_x.';
+        ktraj_calc_y = ktraj_calc_y.';
     end
-    clear rawdata_xA rawdata_xB rawdata_yA rawdata_yB;
+    clear ktraj_calc;
 
-    % get k-space trajectory via slice offset
-    ktraj_meas_x = vz * (phase_xA + phase_xB) / 4 / PULSEQ.TRAJ.slice_offset /2/pi;
-    ktraj_meas_y = vz * (phase_yA + phase_yB) / 4 / PULSEQ.TRAJ.slice_offset /2/pi;
+    % select matching nominal projections if only a subset was calibrated
+    if NR ~= size(ktraj_calc_x,1)
+        if isfield(PULSEQ.TRAJ,'flag_approx') && PULSEQ.TRAJ.flag_approx
+            ktraj_base   = [ktraj_calc_x(1,:); ktraj_calc_y(1,:); zeros(1,size(ktraj_calc_x,2))];
+            R_base       = mr.aux.quat.toRotMat(PULSEQ.PULSEQ_SPI.SPI.rot(1).rotQuaternion);
+            ktraj_calc_x = zeros(NR,size(ktraj_base,2));
+            ktraj_calc_y = zeros(NR,size(ktraj_base,2));
+            for j = 1:NR
+                R_approx = mr.aux.quat.toRotMat(PULSEQ.TRAJ.rot(j).rotQuaternion);
+                temp_k   = R_approx * (R_base \ ktraj_base);
+                ktraj_calc_x(j,:) = temp_k(1,:);
+                ktraj_calc_y(j,:) = temp_k(2,:);
+            end
+            clear ktraj_base R_base R_approx temp_k j;
+        else
+            error('projection objects are missing!');
+        end
+    end
+
+    % calculate phase prior from nominal trajectory
+    phi_calc_x = vz * 4*pi*PULSEQ.TRAJ.slice_offset * ktraj_calc_x;
+    phi_calc_y = vz * 4*pi*PULSEQ.TRAJ.slice_offset * ktraj_calc_y;
+
+    % demodulate rawdata with phase prior
+    rawdata_xA = rawdata_xA .* exp(-1i*phi_calc_x);
+    rawdata_xB = rawdata_xB .* exp(-1i*phi_calc_x);
+    rawdata_yA = rawdata_yA .* exp(-1i*phi_calc_y);
+    rawdata_yB = rawdata_yB .* exp(-1i*phi_calc_y);
+    clear phi_calc_x phi_calc_y;
+
+    % unwrap phase from demodulated data
+    phase_xA = unwrap(angle(rawdata_xA), [], 2);
+    phase_xB = unwrap(angle(rawdata_xB), [], 2);
+    phase_yA = unwrap(angle(rawdata_yA), [], 2);
+    phase_yB = unwrap(angle(rawdata_yB), [], 2);
+    clear rawdata_xA rawdata_xB rawdata_yA rawdata_yB;
+    
+    % get k-space trajectory via slice offset and residual phase difference
+    ktraj_meas_x = ktraj_calc_x + (phase_xA + phase_xB) / 4 / PULSEQ.TRAJ.slice_offset /2/pi;
+    ktraj_meas_y = ktraj_calc_y + (phase_yA + phase_yB) / 4 / PULSEQ.TRAJ.slice_offset /2/pi;
     ktraj_meas(1,:,:) = ktraj_meas_x;
     ktraj_meas(2,:,:) = ktraj_meas_y;
-    
+    clear ktraj_calc_x ktraj_calc_y;
+
     % get eddy current phase
     eddy_x = (phase_xA - phase_xB) / 4;
     eddy_y = (phase_yA - phase_yB) / 4;
-    
+    clear phase_xA phase_xB phase_yA phase_yB;
+
+end
+
+%% case: approximated projections
+if isfield(PULSEQ.TRAJ, 'flag_approx') && PULSEQ.TRAJ.flag_approx
+    rot_approx        = PULSEQ.TRAJ.rot;
+    rot               = PULSEQ.PULSEQ_SPI.SPI.rot;
+    phi_approx        = PULSEQ.TRAJ.phi_approx';
+    phi               = PULSEQ.PULSEQ_SPI.SPI.proj.phi_unique(:);
+    NR                = size(rot,1);
+    ktraj_meas_approx = ktraj_meas;
+    ktraj_meas        = zeros(size(ktraj_meas,1), NR, size(ktraj_meas,3));
+    dphi              = abs(angle(exp(1i*(phi(:) - phi_approx(:).'))));    
+    [~, idx]          = min(dphi, [], 2);    
+    for j = 1:NR
+        temp_k = [squeeze(ktraj_meas_approx(1, idx(j), :)), squeeze(ktraj_meas_approx(2, idx(j), :)), zeros(size(ktraj_meas_approx,3),1)];
+        temp_k = ( inv(mr.aux.quat.toRotMat(rot_approx(idx(j)).rotQuaternion)) * temp_k' )';
+        temp_k = ( mr.aux.quat.toRotMat(rot(j).rotQuaternion) * temp_k' )';
+        ktraj_meas(1,j,:) = temp_k(:,1);
+        ktraj_meas(2,j,:) = temp_k(:,2);
+    end
+    ktraj_meas_x = squeeze(ktraj_meas(1,:,:));
+    ktraj_meas_y = squeeze(ktraj_meas(2,:,:));
+    clear rot_approx rot phi_approx phi ktraj_meas_approx dphi idx temp_k j;
 end
 
 %% load calculated trajectory -> generate hash ID
@@ -275,6 +337,7 @@ set(gca,'linewidth', 2, 'fontsize', 12, 'fontname', 'arial', 'fontweight', 'bold
 
 % eddy currents
 if strcmp(PULSEQ.TRAJ.method, 'robison')
+if (isfield(PULSEQ.TRAJ, 'flag_approx') && ~PULSEQ.TRAJ.flag_approx) || ~isfield(PULSEQ.TRAJ, 'flag_approx')
 figure()
 tiledlayout(2,1)
 ax1 = nexttile;
@@ -298,6 +361,7 @@ hold off
 set(gca,'linewidth', 2, 'fontsize', 12, 'fontname', 'arial', 'fontweight', 'bold')
 
 linkaxes([ax1 ax2], 'x')
+end
 end
 
 end

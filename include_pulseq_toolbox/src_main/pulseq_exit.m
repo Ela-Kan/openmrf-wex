@@ -14,6 +14,7 @@ seq.setDefinition('Rot_Matrix', FOV.Rot_Mat);
 
 %% calculate total sequence duration
 TotalDuration = sum(seq.blockDurations);
+% seq.setDefinition('TotalDuration', TotalDuration);
 disp(' ')
 if TotalDuration > 180
     disp(['   acq time:  ' num2str(round(TotalDuration/60,1)) 'min'])
@@ -103,6 +104,14 @@ if ~exist('flag_sound', 'var')
 end
 if flag_sound==1
     seq.sound();
+end
+
+%% set sequence definitions for Skope field camera
+if exist('SPI', 'var') && isfield(SPI , 'skope') && SPI.skope.flag_onoff
+    seq.setDefinition('CameraAcqDuration',  mr.calcDuration(SPI.adc) + 2e-3);
+    seq.setDefinition('CameraNrDynamics',   sum(~isnan(SPI.skope.TR_list(:))));
+    seq.setDefinition('CameraInterleaveTR', 0.1);
+    seq.setDefinition('CameraAqDelay',     0);
 end
 
 %% write .seq file and save some backup files
